@@ -32,6 +32,6 @@ $client->add_identity('APITeamSMLVM6.of-1.uk.venda.com');
 my @hosts = $client->discover;
 print STDERR Dumper { hosts => \@hosts };
 
-my @replies = $client->rpc('chef', 'runonce');
+my @replies = $client->rpc('chef', 'runonce', { process_results => 'true' });
 print STDERR Dumper { replies => \@replies };
 
