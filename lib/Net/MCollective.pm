@@ -10,6 +10,8 @@ $VERSION = eval $VERSION;
 # core
 use Net::MCollective::Client;
 use Net::MCollective::Request;
+use Net::MCollective::Request::Body;
+use Net::MCollective::Request::Data;
 use Net::MCollective::Response;
 
 # connectors

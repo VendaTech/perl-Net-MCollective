@@ -1,5 +1,26 @@
 package Net::MCollective::Security::SSL;
 use Moose;
+
+=head1 NAME
+
+Net::MCollective::Security::SSL - ssl.rb compatible security plugin
+
+=head1 SYNOPSIS
+
+  my $ssl = Net::MCollective::Security::SSL->new(
+    private_key => 'client.pem',
+    public_key => 'client_public.pem',
+    server_public_key => 'mcserver_public.pem',
+  );
+
+  my $callerid = $ssl->callerid; # cert=client_public
+
+  my $sig = $ssl->sign($message); # sign with private_key
+
+  $ssl->verify($message, $sig); # verify with server_public_key
+
+=cut
+
 use Crypt::OpenSSL::RSA;
 use MIME::Base64 qw/ encode_base64 decode_base64 /;;
 use File::Basename qw/ fileparse /;
@@ -11,11 +32,31 @@ has 'private_key' => (isa => 'Str', is => 'ro', required => 1);
 has 'public_key' => (isa => 'Str', is => 'ro', required => 1);
 has 'server_public_key' => (isa => 'Str', is => 'ro', required => 1);
 
+no Moose;
+
+=head1 METHODS
+
+=head2 callerid
+
+Returns the callerid, based on the ssl security configuration. This is
+the "certificate name", or the filename of the client's public key.
+
+=cut
+
 sub callerid {
     my ($self) = @_;
     my ($cert) = fileparse($self->public_key, '.pem');
     sprintf 'cert=%s', $cert;
 }
+
+=head2 sign
+
+Create a detached signature for the given message using the client's
+private key.
+
+The signature is returned base64-encoded.
+
+=cut
 
 sub sign {
     my ($self, $message) = @_;
@@ -23,6 +64,15 @@ sub sign {
     my $rsa = Crypt::OpenSSL::RSA->new_private_key($key);
     return encode_base64($rsa->sign($message));
 }
+
+=head2 verify
+
+Verify the message and the detached signature given, using the
+server's public key. 
+
+Expects the signature to be base64-encoded.
+
+=cut
 
 sub verify {
     my ($self, $message, $hash) = @_;
