@@ -1,6 +1,7 @@
 package Net::MCollective::Client;
 use Moose;
 use Sys::Hostname qw/ hostname /;
+use YAML::XS;
 
 =head1 NAME
 
@@ -61,7 +62,7 @@ has 'fact_filters' => (
 has 'identities' => (
     isa     => 'ArrayRef[Str]',
     traits  => ['Array'],
-    is      => 'ro',
+    is      => 'rw',
     default => sub { [] },
     handles => {
         add_identity => 'push'
@@ -93,11 +94,11 @@ sub discover {
     $req->filter->{identity} = $self->identities;
     $req->filter->{fact} = $self->fact_filters;
     
-    use YAML::XS;
-    $req->body(Dump("ping"));
+    $req->agent('discovery');
+    $req->body(Dump('ping'));
     $req->hash($self->security->sign($req->body));
 
-    my @replies = $self->connector->send_request('discovery', 2, $req);
+    my @replies = $self->connector->send_timed_request($req, 2);
 
     for my $reply (@replies) {
         $reply->status(
@@ -105,7 +106,10 @@ sub discover {
         );
     }
     
-    return map { $_->senderid } grep { $_->status } @replies;
+    my @identities = map { $_->senderid } grep { $_->status } @replies;
+    $self->identities(\@identities);
+
+    return @identities;
 }
 
 =head2 rpc
@@ -121,20 +125,15 @@ sub rpc {
         callerid => $self->security->callerid,
         senderid => $self->senderid,
     );
-    $req->filter->{cf_class} = $self->class_filters;
-    $req->filter->{identity} = $self->identities;
-    $req->filter->{fact} = $self->fact_filters;
     $req->agent($agent);
 
     my $body = Net::MCollective::Request::Body->new(
         action => $action
-    );
-    
-    use YAML::XS;
+    );    
     $req->body(Dump($body->ruby_style_hash));
     $req->hash($self->security->sign($req->body));
 
-    my @replies = $self->connector->send_request($agent, 60, $req);
+    my @replies = $self->connector->send_directed_request($self->identities, $req, 60);
 
     for my $reply (@replies) {
         $reply->status(

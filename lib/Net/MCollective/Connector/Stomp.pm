@@ -21,6 +21,7 @@ Net::MCollective::Connector::Stomp - STOMP connector for MCollective
 =cut
 
 use Net::STOMP::Client;
+use YAML::XS;
 
 extends 'Net::MCollective::Connector';
 
@@ -58,9 +59,10 @@ sub connect {
     $self->_client($stomp);
 }
 
-=head2 send_request
+=head2 send_timed_request
 
-Send a request to the collective, and wait for responses.
+Send a request to the collective, and wait for responses for a given
+period of time. This is the model for discovery.
 
 Requires the channel to send on (which sets the request and reply
 topics), the timeout, and a Net::MCollective::Request object to send.
@@ -69,14 +71,14 @@ Returns the Net::MCollective::Responses received within the timeout.
 
 =cut
 
-sub send_request {
-    my ($self, $channel, $timeout, $request) = @_;
-    
-    my $command_topic = sprintf '/topic/%s.%s.command', $self->prefix, $channel;
-    my $reply_topic = sprintf '/topic/%s.%s.reply', $self->prefix, $channel;
+sub send_timed_request {
+    my ($self, $request, $timeout) = @_;
 
-    use YAML::XS;
+    my $command_topic = $self->_command_topic($request->agent);
+    my $reply_topic = $self->_reply_topic($request->agent);
+
     $request->msgtarget($command_topic);
+
     my $yaml = Dump($request->ruby_style_hash);
 
     my @frames;
@@ -94,6 +96,65 @@ sub send_request {
     }
     
     return @responses;
+}
+
+=head2 send_directed_request
+
+Sends a request to the given identities, and waits for either all
+expected responses or for the given timeout to expire. 
+
+Returns the Net::MCollective::Responses received.
+
+=cut
+
+sub send_directed_request {
+    my ($self, $identities, $request, $timeout) = @_;
+
+    my $expected = { map { $_ => undef } @$identities };
+
+    my $command_topic = $self->_command_topic($request->agent);
+    my $reply_topic = $self->_reply_topic($request->agent);
+    
+    $request->filter->{identity} = $identities;
+    $request->msgtarget($command_topic);
+
+    my $yaml = Dump($request->ruby_style_hash);
+
+    my @frames;
+    $self->_client->message_callback(
+        sub { 
+            my (undef, $frame) = @_;
+            my $response = Net::MCollective::Response->new_from_frame($frame);
+            $expected->{$response->senderid} = $response;
+        }
+    );
+
+    $self->_client->subscribe(destination => $reply_topic);
+    $self->_client->send(destination => $command_topic, body => $yaml);
+
+    $self->_client->wait_for_frames(
+        timeout => $timeout,
+        callback => sub { 
+            for my $senderid (keys %$expected) {
+                unless (defined $expected->{$senderid}) {
+                    return 0;
+                }
+            }
+            return 1;
+        }
+    );
+
+    return grep { defined $_ } values %$expected;
+}
+
+sub _command_topic {
+    my ($self, $agent) = @_;
+    sprintf '/topic/%s.%s.command', $self->prefix, $agent;
+}
+
+sub _reply_topic {
+    my ($self, $agent) = @_;
+    sprintf '/topic/%s.%s.reply', $self->prefix, $agent;
 }
 
 __PACKAGE__->meta->make_immutable;

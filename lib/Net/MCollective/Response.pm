@@ -1,5 +1,6 @@
 package Net::MCollective::Response;
 use Moose;
+use YAML::XS;
 
 =head1 NAME
 
@@ -28,7 +29,6 @@ construct a Response object.
 sub new_from_frame {
     my ($class, $frame) = @_;
 
-    use YAML::XS;
     my $reply = Load($frame->body);
     
     $class->new(
