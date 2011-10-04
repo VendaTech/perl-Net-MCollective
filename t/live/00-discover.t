@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use Net::MCollective;
-use Data::Dumper;
 
 my $stomp = Net::MCollective::Connector::Stomp->new(
     host => 'stomp.dev.venda.com',
@@ -27,11 +26,7 @@ my $client = Net::MCollective::Client->new(
 #                           ":operator" => "==",
 #                           ":fact" => "chef_environment"});
 
-$client->add_identity('APITeamSMLVM6.of-1.uk.venda.com');
-
 my @hosts = $client->discover;
-print STDERR Dumper { hosts => \@hosts };
+ok(scalar @hosts > 0);
 
-my @replies = $client->rpc('chef', 'runonce', { process_results => 'true' });
-print STDERR Dumper { replies => \@replies };
-
+done_testing;
