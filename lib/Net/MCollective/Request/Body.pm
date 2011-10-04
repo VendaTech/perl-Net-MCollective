@@ -18,7 +18,7 @@ has 'action' => (isa => 'Str', is => 'ro', required => 1);
 
 has 'data' => (
     isa => 'Net::MCollective::Request::Data',
-    is => 'ro',
+    is => 'rw',
     required => 0,
     default => sub {
         Net::MCollective::Request::Data->new(

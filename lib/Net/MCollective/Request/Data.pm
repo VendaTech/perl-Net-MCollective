@@ -23,9 +23,17 @@ representation then serializes correctly with YAML::XS.
 
 has '_data' => (isa => 'HashRef', is => 'ro', required => 1);
 
+no Moose;
+
 sub BUILDARGS {
-    my ($class, %args) = @_;
-    return { _data => \%args };
+    my $class = shift;
+    if (scalar @_ == 1) {
+        return { _data => $_[0] };
+    }
+    else {
+        my %args = @_;
+        return { _data => \%args };
+    }
 }
 
 =head1 METHODS

@@ -129,7 +129,9 @@ sub rpc {
 
     my $body = Net::MCollective::Request::Body->new(
         action => $action
-    );    
+    );
+    $body->data(Net::MCollective::Request::Data->new($data)) if $data;
+
     $req->body(Dump($body->ruby_style_hash));
     $req->hash($self->security->sign($req->body));
 
