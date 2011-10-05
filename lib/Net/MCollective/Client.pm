@@ -22,9 +22,12 @@ Net::MCollective::Client - Perl client for MCollective
     server_public_key => 'mcserver_public.pem',
   );
 
+  my $yaml = Net::MCollective::Serializer::YAML->new;
+
   my $client = Net::MCollective::Client->new(
     connector => $stomp,
     security => $ssl,
+    serializer => $yaml,
   );
 
   my @hosts = $client->discover;
