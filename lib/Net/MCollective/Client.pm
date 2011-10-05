@@ -1,7 +1,5 @@
 package Net::MCollective::Client;
 use Moose;
-use Sys::Hostname qw/ hostname /;
-use YAML::XS;
 
 =head1 NAME
 
@@ -34,8 +32,11 @@ Net::MCollective::Client - Perl client for MCollective
 
 =cut
 
+use Sys::Hostname qw/ hostname /;
+
 has 'connector' => (isa => 'Net::MCollective::Connector', is => 'ro', required => 1);
 has 'security' => (isa => 'Net::MCollective::Security', is => 'ro', required => 1);
+has 'serializer' => (isa => 'Net::MCollective::Serializer', is => 'ro', required => 1);
 
 has 'senderid' => (isa => 'Str', is => 'ro', required => 0, default => sub { hostname() });
 
@@ -71,6 +72,11 @@ has 'identities' => (
 
 no Moose;
 
+sub BUILD {
+    my ($self) = @_;
+    $self->connector->serializer($self->serializer);
+}
+
 =head1 METHODS
 
 =head2 discover
@@ -95,7 +101,7 @@ sub discover {
     $req->filter->{fact} = $self->fact_filters;
     
     $req->agent('discovery');
-    $req->body(Dump('ping'));
+    $req->body($self->serializer->serialize('ping'));
     $req->hash($self->security->sign($req->body));
 
     my @replies = $self->connector->send_timed_request($req, 2);
@@ -132,7 +138,7 @@ sub rpc {
     );
     $body->data(Net::MCollective::Request::Data->new($data)) if $data;
 
-    $req->body(Dump($body->ruby_style_hash));
+    $req->body($self->serializer->serialize($body->ruby_style_hash));
     $req->hash($self->security->sign($req->body));
 
     my @replies = $self->connector->send_directed_request($self->identities, $req, 60);

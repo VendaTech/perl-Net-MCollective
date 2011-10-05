@@ -2,17 +2,20 @@ use strict;
 use warnings;
 use Test::More;
 use Moose;
-use YAML::XS;
+use YAML::Syck;
 
 use_ok('Net::MCollective::Connector::Stomp');
 use_ok('Net::MCollective::Request');
 use_ok('Net::MCollective::Request::Body');
 use_ok('Net::MCollective::Request::Data');
 use_ok('Net::MCollective::Response');
+use_ok('Net::MCollective::Serializer::YAML');
 
 my $c = Net::MCollective::Connector::Stomp->new(
     _client => _mock_stomp(),
     
+    serializer => _mock_serializer(),
+
     host => 'mocked',
     port => 61613,
     prefix => 'mcollective',
@@ -32,6 +35,8 @@ is('Net::MCollective::Response', ref $responses[0]);
 
 $c = Net::MCollective::Connector::Stomp->new(
     _client => _mock_stomp(),
+    
+    serializer => _mock_serializer(),
     
     host => 'mocked',
     port => 61613,
@@ -77,6 +82,10 @@ sub _mock_stomp {
     
     return MockStomp->meta->new_object;
 }
+
+sub _mock_serializer {
+    return Net::MCollective::Serializer::YAML->new
+}    
 
 sub _mock_frame {
     my ($data) = @_;

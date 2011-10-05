@@ -4,6 +4,7 @@ use warnings;
 use Test::More;
 use Net::MCollective;
 use Data::Dumper;
+use MIME::Base64;
 
 my $stomp = Net::MCollective::Connector::Stomp->new(
     host => 'stomp.dev.venda.com',
@@ -13,18 +14,25 @@ my $stomp = Net::MCollective::Connector::Stomp->new(
 $stomp->connect;
 
 my $ssl = Net::MCollective::Security::SSL->new(
-    private_key => '/Users/chris/.chef/candrews.pem',
-    public_key => '/Users/chris/.chef/candrews_public.pem',
+#    private_key => '/Users/chris/.chef/candrews.pem',
+#    public_key => '/Users/chris/.chef/candrews_public.pem',
+    private_key => '/Users/chris/instmaint.pem',
+    public_key => '/Users/chris/instmaint_public.pem',
     server_public_key => '/etc/mcollective/mcserver_public.pem',
 );
+
+my $yaml = Net::MCollective::Serializer::YAML->new;
 
 my $client = Net::MCollective::Client->new(
     connector => $stomp,
     security => $ssl,
+    serializer => $yaml,
 );
 $client->add_class_filter('role.platformapi');
+$client->discover;
 
-my $message = qq{this message has "embedded double quotes"\nand newlines!};
+#my $message = qq{this message has "embedded double quotes"\nand newlines!};
+my $message = q{InstMaint error: **  Code instance 'blah' not found  ** at /usr/lib/instmaint/i386-linux-thread-multi/ScriptLib.pm};
 
 my @replies = $client->rpc('resque_update', 'update',
                            {

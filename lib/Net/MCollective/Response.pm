@@ -1,6 +1,6 @@
 package Net::MCollective::Response;
 use Moose;
-use YAML::XS;
+use YAML::Syck;
 
 =head1 NAME
 

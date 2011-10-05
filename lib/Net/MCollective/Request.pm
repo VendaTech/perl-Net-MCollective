@@ -26,7 +26,7 @@ has 'requestid' => (isa => 'Str', is => 'rw', required => 0);
 has 'msgtarget' => (isa => 'Str', is => 'rw', required => 0);
 
 has 'hash' => (isa => 'Str', is => 'rw', required => 0);
-has 'body' => (isa => 'Str', is => 'rw', required => 0);
+has 'body' => (isa => 'Str|CodeRef', is => 'rw', required => 0);
 has 'agent' => (isa => 'Str', is => 'rw', required => 0);
 
 has 'filter' => (isa => 'HashRef[ArrayRef]', is => 'ro', required => 0,

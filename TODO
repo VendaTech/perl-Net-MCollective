@@ -1,0 +1,1 @@
+* Make Response->new_from_frame use the Serializer object.

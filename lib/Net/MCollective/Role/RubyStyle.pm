@@ -12,8 +12,9 @@ bareword keys) into Ruby-style hashes with symbols for keys, suitable
 for serializing to YAML for exchange with Ruby. 
 
 The keys in the hash returned are just strings with ':' prepended, but
-using YAML::XS these are serialized in such a way that they are
-deserialized to symbols by Ruby. 
+using YAML::Syck these are serialized in such a way that they are
+deserialized to symbols by Ruby, once the quoting is removed - see
+Serializer::YAML for the gory details.
 
 Only "public" attributes are included in the hash - those with an
 initial _ are excluded.

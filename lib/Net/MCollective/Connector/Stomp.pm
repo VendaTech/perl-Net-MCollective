@@ -21,9 +21,10 @@ Net::MCollective::Connector::Stomp - STOMP connector for MCollective
 =cut
 
 use Net::STOMP::Client;
-use YAML::XS;
 
 extends 'Net::MCollective::Connector';
+
+has 'serializer' => (isa => 'Net::MCollective::Serializer', is => 'rw', required => 0);
 
 has 'host' => (isa => 'Str', is => 'ro', required => 1);
 has 'port' => (isa => 'Int', is => 'ro', required => 1);
@@ -79,7 +80,7 @@ sub send_timed_request {
 
     $request->msgtarget($command_topic);
 
-    my $yaml = Dump($request->ruby_style_hash);
+    my $yaml = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
     $self->_client->message_callback(sub { push @frames, $_[1] });
@@ -118,7 +119,7 @@ sub send_directed_request {
     $request->filter->{identity} = $identities;
     $request->msgtarget($command_topic);
 
-    my $yaml = Dump($request->ruby_style_hash);
+    my $yaml = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
     $self->_client->message_callback(

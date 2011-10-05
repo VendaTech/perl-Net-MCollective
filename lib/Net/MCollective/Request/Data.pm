@@ -17,7 +17,7 @@ Net::MCollective::Request::Data - data-hash wrapper for MCollective rpc
 
 This class wraps up a bare perl hash, and allows it to be exported as
 a "ruby-style" hash, with its keys prepended with colons. This
-representation then serializes correctly with YAML::XS.
+representation then serializes correctly with YAML::Syck.
 
 =cut
 
@@ -41,7 +41,7 @@ sub BUILDARGS {
 =head2 ruby_style_hash
 
 Returns a hash in "ruby style", suitable for serializing with
-YAML::XS.
+YAML::Syck.
 
 =cut
 

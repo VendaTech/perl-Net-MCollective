@@ -14,6 +14,9 @@ use Net::MCollective::Request::Body;
 use Net::MCollective::Request::Data;
 use Net::MCollective::Response;
 
+# serializers
+use Net::MCollective::Serializer::YAML;
+
 # connectors
 use Net::MCollective::Connector::Stomp;
 
