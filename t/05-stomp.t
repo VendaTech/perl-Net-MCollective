@@ -72,6 +72,7 @@ sub _mock_stomp {
             methods => {
                 message_callback => sub { $message_callback = $_[1] },
                 subscribe => sub { },
+                unsubscribe => sub { },
                 send => sub { },
                 wait_for_frames => sub { 
                     $message_callback->(undef, shift @frames);

@@ -5,7 +5,7 @@ use Test::More;
 use Net::MCollective;
 
 my $stomp = Net::MCollective::Connector::Stomp->new(
-    host => 'stomp.dev.venda.com',
+    host => 'snow-srv01.of-1.uk.venda.com',
     port => 61613,
     prefix => 'mcollective',
 );
@@ -17,9 +17,12 @@ my $ssl = Net::MCollective::Security::SSL->new(
     server_public_key => '/etc/mcollective/mcserver_public.pem',
 );
 
+my $yaml = Net::MCollective::Serializer::YAML->new;
+
 my $client = Net::MCollective::Client->new(
     connector => $stomp,
     security => $ssl,
+    serializer => $yaml,
 );
 #$client->add_class_filter('role.venda-app-webserver');
 #$client->add_fact_filter({ ":value" => "snowman",

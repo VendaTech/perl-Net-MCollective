@@ -33,7 +33,21 @@ has 'prefix' => (isa => 'Str', is => 'ro', required => 1);
 has 'user' => (isa => 'Str', is => 'ro', required => 0, predicate => 'has_user');
 has 'password' => (isa => 'Str', is => 'ro', required => 0);
 
-has '_client' => (isa => 'Net::STOMP::Client', is => 'rw', required => 0);
+has '_client' => (
+    is => 'rw',
+    isa => 'Net::STOMP::Client',
+    required => 0,
+    predicate => '_has_client'
+);
+
+has '_subscription_id' => (
+    is => 'ro',
+    isa => 'Str',
+    required => 0,
+    default => sub {
+        sprintf 'mcollective_%d_%x', $$, rand(65535);
+    }
+);
 
 no Moose;
 
@@ -80,13 +94,19 @@ sub send_timed_request {
 
     $request->msgtarget($command_topic);
 
-    my $yaml = $self->serializer->serialize($request->ruby_style_hash);
+    my $body = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
     $self->_client->message_callback(sub { push @frames, $_[1] });
 
-    $self->_client->subscribe(destination => $reply_topic);
-    $self->_client->send(destination => $command_topic, body => $yaml);
+    $self->_client->subscribe(
+        destination => $reply_topic,
+        id => $self->_subscription_id,
+    );
+    $self->_client->send(
+        destination => $command_topic,
+        body => $body,
+    );
 
     $self->_client->wait_for_frames(callback => sub { return(0) }, timeout => $timeout);
 
@@ -96,6 +116,8 @@ sub send_timed_request {
         push @responses, $response;
     }
     
+    $self->_client->unsubscribe(id => $self->_subscription_id);
+
     return @responses;
 }
 
@@ -119,7 +141,7 @@ sub send_directed_request {
     $request->filter->{identity} = $identities;
     $request->msgtarget($command_topic);
 
-    my $yaml = $self->serializer->serialize($request->ruby_style_hash);
+    my $body = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
     $self->_client->message_callback(
@@ -130,8 +152,14 @@ sub send_directed_request {
         }
     );
 
-    $self->_client->subscribe(destination => $reply_topic);
-    $self->_client->send(destination => $command_topic, body => $yaml);
+    $self->_client->subscribe(
+        id => $self->_subscription_id,
+        destination => $reply_topic,
+    );
+    $self->_client->send(
+        destination => $command_topic,
+        body => $body,
+    );
 
     $self->_client->wait_for_frames(
         timeout => $timeout,
@@ -144,6 +172,8 @@ sub send_directed_request {
             return 1;
         }
     );
+
+    $self->_client->unsubscribe(id => $self->_subscription_id);
 
     return grep { defined $_ } values %$expected;
 }
