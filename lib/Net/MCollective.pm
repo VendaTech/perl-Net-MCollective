@@ -4,7 +4,7 @@ use warnings;
 
 require 5.008_001;
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.02_01';
 $VERSION = eval $VERSION;
 
 # core
@@ -22,6 +22,7 @@ use Net::MCollective::Connector::Stomp;
 
 # security plugins
 use Net::MCollective::Security::SSL;
+use Net::MCollective::Security::X509;
 
 =pod
 

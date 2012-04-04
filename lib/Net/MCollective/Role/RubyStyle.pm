@@ -48,7 +48,13 @@ sub ruby_style_hash {
             $hash->{':' . $name} = $self->{$name};
         }
     }
-    
+
+    if ($self->meta->has_attribute('_fields')) {
+        for my $field (keys %{ $self->_fields }) {
+            $hash->{':' . $field} = $self->_fields->{$field};
+        }
+    }
+
     return $hash;
 }
 

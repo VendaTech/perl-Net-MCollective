@@ -3,6 +3,8 @@ use warnings;
 use Test::More;
 
 use_ok('Net::MCollective::Security::SSL');
+use_ok('Net::MCollective::Request');
+use_ok('Net::MCollective::Response');
 
 # callerid formatting based on key filename
 
@@ -24,8 +26,20 @@ $ssl = Net::MCollective::Security::SSL->new(
 ok($ssl);
 
 my $message = 'Test Message';
-my $sig = $ssl->sign($message);
-ok($sig);
-ok($ssl->verify($message, $sig));
+my $request = Net::MCollective::Request->new(
+    body => $message,
+    callerid => 'test',
+    senderid => 'test',
+);
+
+$ssl->sign($request);
+ok($request->_fields->{hash});
+
+my $response = Net::MCollective::Response->new(
+    senderid => 'cert=client_public',
+    body => $message,
+    _fields => { ':hash' => $request->_fields->{hash} }
+);
+ok($ssl->verify($response));
 
 done_testing;

@@ -9,6 +9,8 @@ name 'Net-MCollective';
 all_from 'lib/Net/MCollective.pm';
 
 requires 'Crypt::OpenSSL::RSA';
+requires 'Crypt::OpenSSL::X509';
+requires 'Crypt::OpenSSL::VerifyX509';
 requires 'Net::STOMP::Client';
 requires 'Moose';
 requires 'Digest::MD5';

@@ -17,7 +17,7 @@ Net::MCollective::Security::SSL - ssl.rb compatible security plugin
 
   my $sig = $ssl->sign($message); # sign with private_key
 
-  $ssl->verify($message, $sig); # verify with server_public_key
+  $ssl->verify($response); # verify with server_public_key
 
 =cut
 
@@ -59,10 +59,11 @@ The signature is returned base64-encoded.
 =cut
 
 sub sign {
-    my ($self, $message) = @_;
+    my ($self, $request) = @_;
     my $key = read_file($self->private_key);
     my $rsa = Crypt::OpenSSL::RSA->new_private_key($key);
-    return encode_base64($rsa->sign($message));
+    $request->field('hash', encode_base64($rsa->sign($request->body)));
+    return;
 }
 
 =head2 verify
@@ -75,7 +76,9 @@ Expects the signature to be base64-encoded.
 =cut
 
 sub verify {
-    my ($self, $message, $hash) = @_;
+    my ($self, $reply) = @_;
+    my $message = $reply->body;
+    my $hash = $reply->field('hash');
     my $key = read_file($self->server_public_key);
     my $rsa = Crypt::OpenSSL::RSA->new_public_key($key);
     return $rsa->verify($message, decode_base64($hash));

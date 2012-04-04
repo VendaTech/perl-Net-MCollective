@@ -14,8 +14,9 @@ Net::MCollective::Response - response class for MCollective RPC
 
 has 'senderid' => (isa => 'Str', is => 'ro', required => 1);
 has 'body' => (isa => 'Str', is => 'ro', required => 1);
-has 'hash' => (isa => 'Str', is => 'ro', required => 1);
 has 'status' => (isa => 'Bool', is => 'rw', required => 0);
+
+has '_fields' => (isa => 'HashRef', is => 'ro', required => 1);
 
 =head1 METHODS
 
@@ -34,8 +35,19 @@ sub new_from_frame {
     $class->new(
         senderid => $reply->{":senderid"},
         body => $reply->{":body"},
-        hash => $reply->{":hash"},
+        _fields => $reply,
     );
+}
+
+=head2 field
+
+Returns the requested field from the raw reply hash. 
+
+=cut
+
+sub field {
+    my ($self, $field) = @_;
+    return $self->_fields->{':' . $field};
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -43,6 +43,8 @@ has 'serializer' => (isa => 'Net::MCollective::Serializer', is => 'ro', required
 
 has 'senderid' => (isa => 'Str', is => 'ro', required => 0, default => sub { hostname() });
 
+has 'discovered_hosts' => (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
+
 has 'class_filters' => (
     isa     => 'ArrayRef[Str]',
     traits  => ['Array'],
@@ -105,19 +107,18 @@ sub discover {
     
     $req->agent('discovery');
     $req->body($self->serializer->serialize('ping'));
-    $req->hash($self->security->sign($req->body));
+    $self->security->sign($req);
 
     my @replies = $self->connector->send_timed_request($req, 2);
 
     for my $reply (@replies) {
         $reply->status(
-            $self->security->verify($reply->body, $reply->hash)
+            $self->security->verify($reply)
         );
     }
     
     my @identities = map { $_->senderid } grep { $_->status } @replies;
-    $self->identities(\@identities);
-
+    $self->discovered_hosts(\@identities);
     return @identities;
 }
 
@@ -135,6 +136,9 @@ sub rpc {
         senderid => $self->senderid,
     );
     $req->agent($agent);
+    $req->filter->{cf_class} = $self->class_filters;
+    $req->filter->{identity} = $self->identities;
+    $req->filter->{fact} = $self->fact_filters;
 
     my $body = Net::MCollective::Request::Body->new(
         action => $action
@@ -142,13 +146,15 @@ sub rpc {
     $body->data(Net::MCollective::Request::Data->new($data)) if $data;
 
     $req->body($self->serializer->serialize($body->ruby_style_hash));
-    $req->hash($self->security->sign($req->body));
+    $self->security->sign($req);
 
-    my @replies = $self->connector->send_directed_request($self->identities, $req, 60);
+    my @replies = $self->connector->send_directed_request(
+        $self->discovered_hosts, $req, 60
+    );
 
     for my $reply (@replies) {
         $reply->status(
-            $self->security->verify($reply->body, $reply->hash)
+            $self->security->verify($reply)
         );
     }
 
