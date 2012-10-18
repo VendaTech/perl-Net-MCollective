@@ -23,9 +23,11 @@ my $c = Net::MCollective::Connector::Stomp->new(
 ok($c);
 
 my $r = Net::MCollective::Request->new(
+    collective => 'mcollective',
     callerid => 'foo_public',
     senderid => 'foo',
     agent => 'foo',
+    ttl => 60,
 );
 ok($r);
 
@@ -45,9 +47,11 @@ $c = Net::MCollective::Connector::Stomp->new(
 ok($c);
 
 $r = Net::MCollective::Request->new(
+    collective => 'mcollective',
     callerid => 'foo_public',
     senderid => 'foo',
     agent => 'foo',
+    ttl => 60,
 );
 ok($r);
 

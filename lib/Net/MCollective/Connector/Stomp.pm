@@ -92,8 +92,6 @@ sub send_timed_request {
     my $command_topic = $self->_command_topic($request->agent);
     my $reply_topic = $self->_reply_topic($request->agent);
 
-    $request->msgtarget($command_topic);
-
     my $body = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
@@ -138,8 +136,6 @@ sub send_directed_request {
 
     my $command_topic = $self->_command_topic($request->agent);
     my $reply_topic = $self->_reply_topic($request->agent);
-
-    $request->msgtarget($command_topic);
 
     my $body = $self->serializer->serialize($request->ruby_style_hash);
 

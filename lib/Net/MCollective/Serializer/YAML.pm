@@ -25,10 +25,14 @@ ruby-style hash keys.
 
 sub serialize {
     my ($self, $data) = @_;
+
     my $yaml = Dump($data);
 
     # un-double-quote keys
     $yaml =~ s/^(\s*)":(.+?)":/$1:$2:/gm;
+
+    # un-single-quote integers
+    $yaml =~ s/'(\d+)'/$1/gm;
 
     return $yaml;
 }

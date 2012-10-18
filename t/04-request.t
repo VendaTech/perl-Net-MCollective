@@ -5,8 +5,10 @@ use Test::More;
 use_ok('Net::MCollective::Request');
 
 my $r = Net::MCollective::Request->new(
+    collective => 'mcollective',
     callerid => 'foo_public',
     senderid => 'foo',
+    ttl => 60,
 );
 ok($r);
 ok($r->msgtime);

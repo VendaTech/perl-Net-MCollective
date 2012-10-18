@@ -41,7 +41,9 @@ has 'connector' => (isa => 'Net::MCollective::Connector', is => 'ro', required =
 has 'security' => (isa => 'Net::MCollective::Security', is => 'ro', required => 1);
 has 'serializer' => (isa => 'Net::MCollective::Serializer', is => 'ro', required => 1);
 
+has 'collective' => (isa => 'Str', is => 'ro', required => 0, default => sub { 'mcollective' });
 has 'senderid' => (isa => 'Str', is => 'ro', required => 0, default => sub { hostname() });
+has 'ttl' => (isa => 'Int', is => 'ro', required => 0, default => sub { 60 });
 
 has 'discovered_hosts' => (isa => 'ArrayRef[Str]', is => 'rw', required => 0);
 
@@ -98,9 +100,12 @@ sub discover {
     my ($self) = @_;
 
     my $req = Net::MCollective::Request->new(
+        collective => $self->collective,
         callerid => $self->security->callerid,
         senderid => $self->senderid,
+        ttl => $self->ttl,
     );
+    $req->filter->{compound} = [];
     $req->filter->{cf_class} = $self->class_filters;
     $req->filter->{identity} = $self->identities;
     $req->filter->{fact} = $self->fact_filters;
@@ -136,10 +141,13 @@ sub rpc {
     my ($self, $agent, $action, $data) = @_;
 
     my $req = Net::MCollective::Request->new(
+        collective => $self->collective,
         callerid => $self->security->callerid,
         senderid => $self->senderid,
+        ttl => $self->ttl,
     );
     $req->agent($agent);
+    $req->filter->{compound} = [];
     $req->filter->{cf_class} = $self->class_filters;
     $req->filter->{identity} = $self->identities;
     $req->filter->{fact} = $self->fact_filters;

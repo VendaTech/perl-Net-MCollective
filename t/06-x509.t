@@ -22,9 +22,11 @@ is($x509->callerid, '/C=US/O=net.mcollective.example.org/OU=test/OU=CA/CN=test-s
 
 my $message = 'Test Message';
 my $request = Net::MCollective::Request->new(
+    collective => 'mcollective',
     body => $message,
     callerid => 'test',
     senderid => 'test',
+    ttl => 60,
 );
 
 $x509->sign($request);

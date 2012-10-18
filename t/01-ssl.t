@@ -27,9 +27,11 @@ ok($ssl);
 
 my $message = 'Test Message';
 my $request = Net::MCollective::Request->new(
+    ttl => 60,
     body => $message,
     callerid => 'test',
     senderid => 'test',
+    collective => 'mcollective',
 );
 
 $ssl->sign($request);

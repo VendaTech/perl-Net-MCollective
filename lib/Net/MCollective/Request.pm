@@ -20,10 +20,11 @@ with 'Net::MCollective::Role::RubyStyle';
 
 has 'callerid' => (isa => 'Str', is => 'ro', required => 1);
 has 'senderid' => (isa => 'Str', is => 'ro', required => 1);
+has 'ttl' => (isa => 'Int', is => 'ro', required => 1);
+has 'collective' => (isa => 'Str', is => 'ro', required => 1);
 
 has 'msgtime' => (isa => 'Int', is => 'rw', required => 0);
 has 'requestid' => (isa => 'Str', is => 'rw', required => 0);
-has 'msgtarget' => (isa => 'Str', is => 'rw', required => 0);
 
 has 'body' => (isa => 'Str|CodeRef', is => 'rw', required => 0);
 has 'agent' => (isa => 'Str', is => 'rw', required => 0);
