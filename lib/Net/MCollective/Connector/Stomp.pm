@@ -112,7 +112,8 @@ sub send_timed_request {
 
     my @responses;
     for my $frame (@frames) {
-        my $response = Net::MCollective::Response->new_from_frame($frame);
+        my $body = $self->serializer->deserialize($frame->body);
+        my $response = Net::MCollective::Response->new($body);
         push @responses, $response;
     }
     
@@ -146,7 +147,8 @@ sub send_directed_request {
     $self->_client->message_callback(
         sub { 
             my (undef, $frame) = @_;
-            my $response = Net::MCollective::Response->new_from_frame($frame);
+            my $body = $self->serializer->deserialize($frame->body);
+            my $response = Net::MCollective::Response->new($body);
             $expected->{$response->senderid} = $response;
         }
     );

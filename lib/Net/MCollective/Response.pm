@@ -1,6 +1,5 @@
 package Net::MCollective::Response;
 use Moose;
-use YAML::Syck;
 
 =head1 NAME
 
@@ -8,7 +7,8 @@ Net::MCollective::Response - response class for MCollective RPC
 
 =head1 SYNOPSIS
 
-  my $response = Net::MCollective::Response->new_from_frame($frame);
+  my $data = $serializer->deserialize($frame);
+  my $response = Net::MCollective::Response->new($data);
 
 =cut
 
@@ -20,24 +20,29 @@ has '_fields' => (isa => 'HashRef', is => 'ro', required => 1);
 
 =head1 METHODS
 
-=head2 new_from_frame
+=head2 new
 
-Takes a frame hash received from the collective and attempts to
-construct a Response object.
+Takes a deserialized frame received from the collective and attempts
+to construct a Response object.
 
 =cut
 
-sub new_from_frame {
-    my ($class, $frame) = @_;
+around BUILDARGS => sub {
+    my $orig  = shift;
+    my $class = shift;
 
-    my $reply = Load($frame->body);
-    
-    $class->new(
-        senderid => $reply->{":senderid"},
-        body => $reply->{":body"},
-        _fields => $reply,
-    );
-}
+    if (@_ == 1) {
+        my $reply = shift;
+        return $class->$orig(
+            senderid => $reply->{":senderid"},
+            body => $reply->{":body"},
+            _fields => $reply,
+        );
+    }
+    else {
+        return $class->$orig(@_);
+    }
+};
 
 =head2 field
 
