@@ -117,7 +117,11 @@ sub discover {
         );
     }
     
-    my @identities = map { $_->senderid } grep { $_->status } @replies;
+    my @identities = map { $_->senderid }
+                    grep { $_->status }
+                    grep { $_->field('senderagent') eq 'discovery' }
+                    grep { $_->field('requestid') eq $req->requestid } @replies;
+
     $self->discovered_hosts(\@identities);
     return @identities;
 }

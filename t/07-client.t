@@ -19,17 +19,41 @@ $c->rpc('foo', 'bar', { baz => 1 });
 
 done_testing;
 
+my $requestid;
+
 sub _mock_responses {
     return (
         Net::MCollective::Response->new(
             senderid => 'senderid1',
             body => 'response-body',
-            _fields => {},
+            _fields => {
+                ':requestid' => $requestid,
+                ':senderagent' => 'discovery',
+            },
         ),
         Net::MCollective::Response->new(
             senderid => 'senderid2',
             body => 'response-body',
-            _fields => {},
+            _fields => {
+                ':requestid' => $requestid,
+                ':senderagent' => 'discovery',
+            }
+        ),
+        Net::MCollective::Response->new(
+            senderid => 'senderid3',
+            body => 'response-body',
+            _fields => {
+                ':requestid' => 'foo',
+                ':senderagent' => 'discovery',
+            },
+        ),
+        Net::MCollective::Response->new(
+            senderid => 'senderid4',
+            body => 'response-body',
+            _fields => {
+                ':requestid' => $requestid,
+                ':senderagent' => 'foo',
+            },
         )
     );
 }
@@ -66,6 +90,7 @@ sub _mock_security {
                     my ($self, $req) = @_;
                     $req->field('sig', 'base64-sig');
                     $req->field('cert', 'client-cert');
+                    $requestid = $req->requestid;
                     return;
                 },
                 verify => sub {
