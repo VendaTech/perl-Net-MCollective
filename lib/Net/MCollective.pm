@@ -19,6 +19,7 @@ use Net::MCollective::Serializer::YAML;
 
 # connectors
 use Net::MCollective::Connector::Stomp;
+use Net::MCollective::Connector::ActiveMQ;
 
 # security plugins
 use Net::MCollective::Security::SSL;

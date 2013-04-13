@@ -1,22 +1,22 @@
-package Net::MCollective::Connector::Stomp;
+package Net::MCollective::Connector::ActiveMQ;
 use Moose;
 
 =head1 NAME
 
-Net::MCollective::Connector::Stomp - STOMP connector for MCollective
+Net::MCollective::Connector::ActiveMQ - STOMP connector for MCollective
 
 =head1 SYNOPSIS
 
-  my $stomp = Net::MCollective::Connector::Stomp->new(
+  my $activemq = Net::MCollective::Connector::ActiveMQ->new(
     host => 'stomp.foo.com',
     port => 61613,
     user => 'mcollective',
     password => 'secret',
     prefix => 'mcollective',
   );
-  $stomp->connect;
+  $activemq->connect;
 
-  my @replies = $stomp->send_request($channel, $timeout, $request);
+  my @replies = $activemq->send_request($channel, $timeout, $request);
 
 =cut
 
@@ -61,7 +61,7 @@ Connect to the configured STOMP service.
 
 sub connect {
     my ($self) = @_;
-    
+
     my $stomp = Net::STOMP::Client->new(host => $self->host, port => $self->port);
 
     if ($self->has_user) {
@@ -70,7 +70,7 @@ sub connect {
     else {
         $stomp->connect();
     }
-    
+
     $self->_client($stomp);
 }
 
@@ -90,7 +90,7 @@ sub send_timed_request {
     my ($self, $request, $timeout) = @_;
 
     my $command_topic = $self->_command_topic($request);
-    my $reply_topic = $self->_reply_topic($request);
+    my $reply_queue = $self->_reply_topic($request);
 
     my $body = $self->serializer->serialize($request->ruby_style_hash);
 
@@ -98,11 +98,12 @@ sub send_timed_request {
     $self->_client->message_callback(sub { push @frames, $_[1] });
 
     $self->_client->subscribe(
-        destination => $reply_topic,
         id => $self->_subscription_id,
+        destination => $reply_queue,
     );
     $self->_client->send(
         destination => $command_topic,
+        'reply-to' => $reply_queue,
         body => $body,
     );
 
@@ -114,7 +115,7 @@ sub send_timed_request {
         my $response = Net::MCollective::Response->new($body);
         push @responses, $response;
     }
-    
+
     $self->_client->unsubscribe(id => $self->_subscription_id);
 
     return @responses;
@@ -123,7 +124,7 @@ sub send_timed_request {
 =head2 send_directed_request
 
 Sends a request to the given identities, and waits for either all
-expected responses or for the given timeout to expire. 
+expected responses or for the given timeout to expire.
 
 Returns the Net::MCollective::Responses received.
 
@@ -135,13 +136,13 @@ sub send_directed_request {
     my $expected = { map { $_ => undef } @$identities };
 
     my $command_topic = $self->_command_topic($request);
-    my $reply_topic = $self->_reply_topic($request);
+    my $reply_queue = $self->_reply_topic($request);
 
     my $body = $self->serializer->serialize($request->ruby_style_hash);
 
     my @frames;
     $self->_client->message_callback(
-        sub { 
+        sub {
             my (undef, $frame) = @_;
             my $body = $self->serializer->deserialize($frame->body);
             my $response = Net::MCollective::Response->new($body);
@@ -151,16 +152,17 @@ sub send_directed_request {
 
     $self->_client->subscribe(
         id => $self->_subscription_id,
-        destination => $reply_topic,
+        destination => $reply_queue,
     );
     $self->_client->send(
         destination => $command_topic,
+        'reply-to' => $reply_queue,
         body => $body,
     );
 
     $self->_client->wait_for_frames(
         timeout => $timeout,
-        callback => sub { 
+        callback => sub {
             for my $senderid (keys %$expected) {
                 unless (defined $expected->{$senderid}) {
                     return 0;
@@ -177,12 +179,12 @@ sub send_directed_request {
 
 sub _command_topic {
     my ($self, $request) = @_;
-    sprintf '/topic/%s.%s.command', $self->prefix, $request->agent;
+    sprintf '/topic/%s.%s.agent', $self->prefix, $request->agent;
 }
 
 sub _reply_topic {
     my ($self, $request) = @_;
-    sprintf '/topic/%s.%s.reply', $self->prefix, $request->agent;
+    sprintf '/queue/%s.reply.%s', $self->prefix, $request->requestid;
 }
 
 __PACKAGE__->meta->make_immutable;
